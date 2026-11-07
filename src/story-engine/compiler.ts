@@ -111,6 +111,11 @@ export function compileStory(raw: unknown): { story: Story; work: Work } {
   const fail = (p: string, m: string): never => {
     throw new StoryIssue(p, m);
   };
+  if (
+    s.phone.wallpaper?.startsWith("data:") &&
+    !safeMedia(s.phone.wallpaper)
+  )
+    fail("phone.wallpaper", "自定义壁纸仅支持受支持的内嵌图片，不允许脚本或远程资源");
   const names = new Set<string>();
   const unique = (v: string, p: string) => {
     if (names.has(v)) fail(p, "重复 ID: " + v);

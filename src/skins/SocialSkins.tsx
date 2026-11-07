@@ -326,13 +326,20 @@ export function FacebookSkin(p: Props) {
   );
 }
 export function RedbookSkin(p: Props) {
-  const { tab, setTab, q, setQ, items } = useContent(p, "发现");
+  const history = p.items.filter((i) => i.folder === "搜索历史");
+  const { tab, setTab, q, setQ, items } = useContent(
+    { ...p, items: p.items.filter((i) => i.folder !== "搜索历史") },
+    "发现",
+  );
   const list =
     tab === "收藏"
       ? items.filter((i) => i.favorite)
       : tab === "关注"
         ? items.filter((i) => i.folder === "关注")
         : items;
+  const terms = [
+    ...new Set(history.flatMap((i) => i.body.split("\n")).filter(Boolean)),
+  ];
   return (
     <div className="catalog-skin redbook-ui">
       <Header p={p} />
@@ -349,6 +356,23 @@ export function RedbookSkin(p: Props) {
       </div>
       <div className="catalog-scroll">
         <SearchBox value={q} set={setQ} />
+        {!q && terms.length > 0 && (
+          <div className="redbook-search-history" role="list">
+            <small>搜索历史</small>
+            <div className="redbook-history-chips">
+              {terms.map((t) => (
+                <button
+                  key={t}
+                  role="listitem"
+                  onClick={() => setQ(t)}
+                  aria-label={`搜索 ${t}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="redbook-masonry">
           {list.map((i) => (
             <button key={i.id} onClick={() => p.onItem(i)}>
