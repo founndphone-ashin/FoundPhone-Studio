@@ -51,6 +51,7 @@
       "folder": "",
       "icon": ""
     },
+    "appstore",
     {
       "id": "messages",
       "name": "信息",
@@ -60,7 +61,6 @@
       "folder": "",
       "icon": ""
     },
-    "messages",
     "contacts",
     "photos",
     "camera",
