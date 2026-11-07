@@ -3965,6 +3965,15 @@ label {
   min-height: 0;
   padding: 14px 10px;
 }
+.skin-continue {
+  display: block;
+  margin: 18px auto 6px;
+  font-size: 11px;
+  color: #888;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
 .skin-date {
   text-align: center;
   color: #aaa;

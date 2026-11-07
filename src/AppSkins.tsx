@@ -1,6 +1,6 @@
 import { NativeComposer } from "./DeviceSystem";
 import { useSkinState } from "./skinState";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   Plus,
@@ -89,17 +89,50 @@ function MessageList({
   onItem,
   onRead,
   whatsapp = false,
+  p,
 }: {
   items: Item[];
   creator: boolean;
   onItem: (i: Item) => void;
   onRead: (id: string) => void;
   whatsapp?: boolean;
+  p?: SkinProps;
 }) {
+  const thread = items[0]?.title ?? "";
+  const [revealed, setRevealed] = useSkinState<number>(
+    p ?? ({} as SkinProps),
+    `revealed-${thread}`,
+    1,
+  );
+  const stepOf = (i: Item) => {
+    const raw = i.meta?.step;
+    const n = raw === undefined ? 0 : Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  const stepped = items.some((i) => stepOf(i) > 0);
+  const shown = stepped
+    ? items.filter((i) => stepOf(i) === 0 || stepOf(i) <= revealed)
+    : items;
+  const pending = stepped
+    ? items.filter((i) => stepOf(i) > revealed).length
+    : 0;
+  const endRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [revealed]);
+  const revealNext = () => {
+    if (stepped && pending > 0) setRevealed((v) => v + 1);
+  };
   return (
-    <div className={`skin-messages ${whatsapp ? "wa-wallpaper" : ""}`}>
-      <div className="skin-date">{items[0]?.time.slice(0, 10)}</div>
-      {items.map((i) => (
+    <div
+      className={`skin-messages ${whatsapp ? "wa-wallpaper" : ""}`}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("button")) return;
+        revealNext();
+      }}
+    >
+      <div className="skin-date">{shown[0]?.time.slice(0, 10)}</div>
+      {shown.map((i) => (
         <div
           key={i.id}
           className={`skin-message ${i.outgoing ? "outgoing" : ""}`}
@@ -129,6 +162,12 @@ function MessageList({
           {!whatsapp && i.outgoing && <Avatar name={i.sender} src={i.avatar} />}
         </div>
       ))}
+      {pending > 0 && (
+        <button className="skin-continue" onClick={revealNext}>
+          点击继续 · 还有 {pending} 条
+        </button>
+      )}
+      <div ref={endRef} />
     </div>
   );
 }
@@ -282,6 +321,7 @@ export function WeChatSkin(p: SkinProps) {
             creator={p.creator}
             onItem={p.onItem}
             onRead={p.onRead}
+            p={p}
           />
           <Compose creator={p.creator} onAdd={p.onAdd} />
         </>
@@ -338,7 +378,14 @@ export function WeChatSkin(p: SkinProps) {
                 )
                 .map((t) => {
                   const list = p.items.filter((i) => i.title === t),
-                    last = list.at(-1)!;
+                    rvRaw = p.ui?.[`revealed-${t}`],
+                    rv =
+                      typeof rvRaw === "number" && rvRaw > 0 ? rvRaw : 1,
+                    shown = list.filter(
+                      (i) =>
+                        !i.meta?.step || Number(i.meta.step) <= rv,
+                    ),
+                    last = shown.at(-1) ?? list[0];
                   return (
                     <button
                       className="wx-chat-row"
@@ -571,6 +618,7 @@ export function WhatsAppSkin(p: SkinProps) {
             onItem={p.onItem}
             onRead={p.onRead}
             whatsapp
+            p={p}
           />
           <Compose creator={p.creator} onAdd={p.onAdd} wa />
         </>
